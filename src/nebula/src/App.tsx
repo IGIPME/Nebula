@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
-import './App.css'
+import './styles/App.css'
 import { getApiErrorMessage } from './api/client'
 import { createProject } from './api/projects'
 import { getTemplate, listTemplates } from './api/templates'

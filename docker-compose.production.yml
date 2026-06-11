@@ -1,0 +1,59 @@
+# ── Nebula 生产环境 Docker Compose ────────────────────────────────
+#
+# 从腾讯云 TCR 镜像仓库拉取预构建镜像进行部署。
+#
+# 使用方式：
+#   docker compose -f docker-compose.production.yml --env-file .env pull    # 拉取最新镜像
+#   docker compose -f docker-compose.production.yml --env-file .env up -d   # 启动容器
+#   docker compose -f docker-compose.production.yml --env-file .env down    # 关闭容器
+#
+# 前置条件：
+#   已登录腾讯云 TCR：docker login ccr.ccs.tencentyun.com
+
+services:
+  # ── Rust 后端 ──────────────────────────────────────────────────
+  nebula-server:
+    image: ${BACKEND_IMAGE:-ccr.ccs.tencentyun.com/igipme.nebula/nebula.backend}:${BACKEND_IMAGE_TAG:-latest}
+    container_name: nebula-server
+    ports:
+      - "${BACKEND_PORT:-3030}:3030"
+    environment:
+      - NEBULA_SERVER_ADDR=${NEBULA_SERVER_ADDR:-0.0.0.0:3030}
+      - RUST_LOG=${RUST_LOG:-nebula_ffi=info,tower_http=info}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3030/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - nebula-net
+
+  # ── React 前端 (nginx) ─────────────────────────────────────────
+  nebula-frontend:
+    image: ${FRONTEND_IMAGE:-ccr.ccs.tencentyun.com/igipme.nebula/nebula.frontend}:${FRONTEND_IMAGE_TAG:-latest}
+    container_name: nebula-frontend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      nebula-server:
+        condition: service_healthy
+    networks:
+      - nebula-net
+
+networks:
+  nebula-net:
+    driver: bridge
+    name: nebula-net
