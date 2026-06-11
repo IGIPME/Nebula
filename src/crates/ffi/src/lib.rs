@@ -80,10 +80,7 @@ async fn create_project(
         StatusCode::CREATED
     };
 
-    Ok((
-        status,
-        Json(CreateProjectResponse::from_report(report, request.dry_run)),
-    ))
+    Ok((status, Json(CreateProjectResponse::from_report(report, request.dry_run))))
 }
 
 #[derive(Debug, Serialize)]
@@ -423,11 +420,10 @@ mod tests {
         let body = response_json(response).await;
         assert_eq!(body["dryRun"], true);
         assert!(
-            body["createdFiles"]
+            !body["createdFiles"]
                 .as_array()
                 .expect("created files")
-                .len()
-                > 0
+                .is_empty()
         );
     }
 

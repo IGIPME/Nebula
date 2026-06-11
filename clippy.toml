@@ -1,0 +1,53 @@
+# ── Nebula Clippy Configuration ────────────────────────────────────
+#
+# Rust 1.95 + Edition 2024
+
+# ── 类型复杂度阈值 ─────────────────────────────────────────────────
+cognitive-complexity-threshold = 25
+type-complexity-threshold = 250
+
+# ── 允许的 lint ────────────────────────────────────────────────────
+#
+# 以下 lint 在项目中全局允许（与代码风格和领域需求相匹配）
+
+# 允许单字符名称（在数学/物理代码中常见，如 x, y, z, t, k）
+allow-dbg-in-tests = false
+allow-expect-in-tests = false
+allow-unwrap-in-tests = false
+
+# ── 禁止的方法 ─────────────────────────────────────────────────────
+# 如需限制某些方法的调用，在此列出
+# avoid-breaking-exported-api = false
+
+# ── 文档检查阈值 ──────────────────────────────────────────────────
+doc-valid-idents = [
+    "GitHub",
+    "CLI",
+    "API",
+    "EDA",
+    "PIC",
+    "PDK",
+    "FDTD",
+    "GDS",
+    "MEEP",
+    "MCP",
+    "gRPC",
+    "Axum",
+    "Tera",
+    "Tokio",
+    "Clap",
+    # 中文项目常用缩写
+    "Nebula",
+    "Lumerical",
+    "Ansys",
+]
+
+# ── 第三方依赖配置 ─────────────────────────────────────────────────
+# suppressed-valid-idents 等
+
+# ── 禁止的命名后缀 ─────────────────────────────────────────────────
+# forbid-unsafe = "deny"  # 可根据项目需求启用
+
+# ── 宏相关 ─────────────────────────────────────────────────────────
+# 项目使用 include_dir! 宏嵌入模板，需允许此模式
+allowed-dotfiles = []

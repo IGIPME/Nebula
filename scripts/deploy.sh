@@ -16,7 +16,7 @@
 set -euo pipefail
 
 # ── 配置 ──────────────────────────────────────────────────────────
-CDN_BASE="${CDN_BASE:-http://cdn.istaroth.xin/nebula}"
+CDN_BASE="${CDN_BASE:-https://cdn.istaroth.xin/nebula}"
 FILES=("docker-compose.production.yml" ".env.example")
 COMPOSE_FILE="docker-compose.production.yml"
 ENV_FILE=".env"

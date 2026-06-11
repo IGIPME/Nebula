@@ -71,16 +71,9 @@ pub fn run() -> Result<()> {
                 non_interactive,
                 force,
                 dry_run,
-            } => init_template(
-                template,
-                name,
-                output,
-                vars,
-                author,
-                non_interactive,
-                force,
-                dry_run,
-            ),
+            } => {
+                init_template(template, name, output, vars, author, non_interactive, force, dry_run)
+            },
             TemplateAction::List => list_templates(),
         },
     }
@@ -93,13 +86,8 @@ fn list_templates() -> Result<()> {
     for summary in templates {
         match (summary.version, summary.description) {
             (Some(version), Some(description)) => {
-                println!(
-                    "  {}  {}  {}",
-                    summary.name.bold(),
-                    version.dimmed(),
-                    description
-                );
-            }
+                println!("  {}  {}  {}", summary.name.bold(), version.dimmed(), description);
+            },
             _ => println!("  {} {}", summary.name.bold(), "(无有效元数据)".dimmed()),
         }
     }
@@ -121,12 +109,7 @@ fn init_template(
     let meta = template::load_template_meta(&template_name)?;
     let mut variables = HashMap::new();
 
-    insert_variable(
-        &mut variables,
-        "project-name".to_string(),
-        project_name,
-        "--name",
-    )?;
+    insert_variable(&mut variables, "project-name".to_string(), project_name, "--name")?;
 
     for (key, value) in vars {
         insert_variable(&mut variables, key, value, "--var")?;
@@ -140,11 +123,7 @@ fn init_template(
         fill_missing_required_variables(&meta, &mut variables)?;
     }
 
-    println!(
-        "{} 从模板 '{}' 初始化项目...",
-        "🔄️".bold(),
-        template_name.bold()
-    );
+    println!("{} 从模板 '{}' 初始化项目...", "🔄️".bold(), template_name.bold());
 
     let report = template::initialize_project(InitOptions {
         template_name,
@@ -175,11 +154,7 @@ fn init_template(
     if dry_run {
         println!("{} dry-run 完成，未写入文件。", "✅".bold().green());
     } else {
-        println!(
-            "{} 项目生成成功！输出父目录：{}",
-            "✅".bold().green(),
-            output.display()
-        );
+        println!("{} 项目生成成功！输出父目录：{}", "✅".bold().green(), output.display());
     }
 
     Ok(())
@@ -264,21 +239,12 @@ mod tests {
     #[test]
     fn detects_conflicting_alias_values() {
         let mut variables = HashMap::new();
-        insert_variable(
-            &mut variables,
-            "project-name".to_string(),
-            "A".to_string(),
-            "--name",
-        )
-        .expect("insert");
+        insert_variable(&mut variables, "project-name".to_string(), "A".to_string(), "--name")
+            .expect("insert");
 
-        let err = insert_variable(
-            &mut variables,
-            "project_name".to_string(),
-            "B".to_string(),
-            "--var",
-        )
-        .expect_err("conflict");
+        let err =
+            insert_variable(&mut variables, "project_name".to_string(), "B".to_string(), "--var")
+                .expect_err("conflict");
 
         assert!(err.to_string().contains("值冲突"));
     }

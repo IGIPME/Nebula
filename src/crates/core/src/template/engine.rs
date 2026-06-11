@@ -197,7 +197,7 @@ fn process_template_dir(
                     options,
                     report,
                 )?;
-            }
+            },
             DirEntry::File(file) => {
                 if target_path.exists() {
                     match options.overwrite {
@@ -208,8 +208,8 @@ fn process_template_dir(
                         OverwriteMode::Skip => {
                             report.skipped_files.push(target_path);
                             continue;
-                        }
-                        OverwriteMode::Overwrite => {}
+                        },
+                        OverwriteMode::Overwrite => {},
                     }
                 }
 
@@ -228,7 +228,7 @@ fn process_template_dir(
                 }
 
                 report.created_files.push(target_path);
-            }
+            },
         }
     }
 
@@ -242,10 +242,10 @@ fn write_file(path: &Path, content: &[u8], overwrite: OverwriteMode) -> Result<(
     match overwrite {
         OverwriteMode::Fail | OverwriteMode::Skip => {
             options.create_new(true);
-        }
+        },
         OverwriteMode::Overwrite => {
             options.create(true).truncate(true);
-        }
+        },
     }
 
     let mut file = options
@@ -308,11 +308,11 @@ fn safe_join(base: &Path, relative: &Path) -> Result<PathBuf> {
 fn validate_relative_path(path: &Path) -> Result<()> {
     for component in path.components() {
         match component {
-            Component::Normal(_) | Component::CurDir => {}
+            Component::Normal(_) | Component::CurDir => {},
             Component::ParentDir => bail!("渲染后的路径不能包含 '..'：{}", path.display()),
             Component::RootDir | Component::Prefix(_) => {
                 bail!("渲染后的路径不能是绝对路径：{}", path.display())
-            }
+            },
         }
     }
     Ok(())
@@ -358,8 +358,8 @@ fn template_variable_names(meta: &TemplateMeta, provided: &HashMap<String, Strin
 
 fn insert_aliases(context: &mut TeraContext, name: &str, value: &str) {
     context.insert(name, value);
-    context.insert(&to_safe_key(name), value);
-    context.insert(&to_original_key(name), value);
+    context.insert(to_safe_key(name), value);
+    context.insert(to_original_key(name), value);
 }
 
 /// 插入模板变量，并同时写入 `project-name` / `project_name` 这类等价别名。
@@ -375,16 +375,16 @@ pub fn insert_variable(
     let canonical = canonical_key(&key);
 
     for existing_key in alias_keys(&key) {
-        if let Some(existing_value) = variables.get(&existing_key) {
-            if existing_value != &value {
-                bail!(
-                    "变量 '{}' 的值冲突：已有值 '{}'，{} 提供了 '{}'",
-                    canonical,
-                    existing_value,
-                    source,
-                    value
-                );
-            }
+        if let Some(existing_value) = variables.get(&existing_key)
+            && existing_value != &value
+        {
+            bail!(
+                "变量 '{}' 的值冲突：已有值 '{}'，{} 提供了 '{}'",
+                canonical,
+                existing_value,
+                source,
+                value
+            );
         }
     }
 
