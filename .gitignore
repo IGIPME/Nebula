@@ -1,0 +1,16 @@
+.vs/
+.idea/
+.DS_Store
+
+.env
+.env.*
+!.env.example
+
+target/
+
+src/nebula/node_modules/
+src/nebula/dist/
+*.tsbuildinfo
+
+__pycache__/
+*.py[cod]

@@ -1,0 +1,6 @@
+# 这是一个由 project.toml 与 EDA 工具自动生成的一个配置文件，类似于锁文件
+# 你不应该手动修改它，也不建议手动修改
+# 请记得在版本控制中追踪本文件
+[project]
+name = "{{ project-name }}"
+version = "{{ project-version }}"

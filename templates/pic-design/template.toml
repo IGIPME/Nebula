@@ -1,0 +1,12 @@
+[template]
+name = "pic-design"
+description = "一个基础的 Nebula 项目模板"
+version = "1.0"
+
+[variables]
+project-name = { prompt = "项目名称", default = "NewProject" }
+project-version = { prompt = "项目版本", default = "0.1.0" }
+description = { prompt = "项目描述", default = "一个 PIC 新项目" }
+author = { prompt = "作者", default = "unknown" }
+pdk-name = { prompt = "PDK 名称", default = "SiPh_PDK" }
+pdk-version = { prompt = "PDK 版本", default = "1.0.0" }

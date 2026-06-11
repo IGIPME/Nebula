@@ -1,0 +1,62 @@
+# ── Nebula 后端 Dockerfile ──────────────────────────────────────
+#
+# 上下文：仓库根目录
+# 用法：docker build -f Dockerfile.backend -t nebula-server .
+#
+
+# ── Stage 1: 编译 ────────────────────────────────────────────────
+FROM rust:1.95-bookworm AS builder
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        clang \
+        lld \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# 先拷贝 Cargo 依赖描述文件（利用 Docker 层缓存加速依赖下载）
+COPY Cargo.toml Cargo.lock ./
+COPY .cargo .cargo/
+COPY src/crates/core/Cargo.toml src/crates/core/
+COPY src/crates/cli/Cargo.toml src/crates/cli/
+COPY src/crates/ffi/Cargo.toml src/crates/ffi/
+
+# 创建最小占位源文件以便 cargo fetch 所有依赖
+RUN mkdir -p src/crates/core/src/template \
+    && mkdir -p src/crates/cli/src \
+    && mkdir -p src/crates/ffi/src \
+    && mkdir -p templates \
+    && echo "" > src/crates/core/src/template/template.rs \
+    && echo "pub mod template;" > src/crates/core/src/lib.rs \
+    && echo "pub mod template; pub use template::*;" > src/crates/core/src/template/mod.rs \
+    && echo "fn main() {}" > src/crates/cli/src/main.rs \
+    && echo "pub fn run() -> anyhow::Result<()> { Ok(()) }" > src/crates/cli/src/lib.rs \
+    && echo "fn main() {}" > src/crates/ffi/src/main.rs \
+    && echo "pub fn app() -> axum::Router { axum::Router::new() }" > src/crates/ffi/src/lib.rs \
+    && cargo fetch
+
+# 拷贝真实源码 + 模板并编译
+COPY src/crates/core/src/ src/crates/core/src/
+COPY src/crates/cli/src/ src/crates/cli/src/
+COPY src/crates/ffi/src/ src/crates/ffi/src/
+COPY templates/ templates/
+
+RUN cargo build --release -p nebula-ffi
+
+# ── Stage 2: 运行时 ──────────────────────────────────────────────
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/target/release/nebula-server /usr/local/bin/nebula-server
+
+ENV NEBULA_SERVER_ADDR=0.0.0.0:3030
+
+EXPOSE 3030
+
+USER nobody
+
+CMD ["nebula-server"]

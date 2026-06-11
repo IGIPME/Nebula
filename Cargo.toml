@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "src/crates/core",
+    "src/crates/cli",
+    "src/crates/ffi",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+repository = "https://github.com/IGIPME/Nebula"

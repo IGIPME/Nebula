@@ -1,0 +1,12 @@
+#root {
+  min-height: 100vh;
+}
+
+code {
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.08);
+  color: #312e81;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.875rem;
+  padding: 2px 6px;
+}

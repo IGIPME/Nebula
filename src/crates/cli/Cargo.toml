@@ -1,0 +1,10 @@
+[package]
+name = "nebula-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.0", features = ["derive"] }
+colored = "3.1.1"
+nebula-core = { path = "../core" }

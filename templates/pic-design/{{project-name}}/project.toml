@@ -1,0 +1,18 @@
+[project]
+name = "{{ project-name }}"
+version = "{{ project-version }}"
+description = "{{ description }}"
+authors = ["{{ author }}"]
+edition = "2026"
+pdk = { name = "{{ pdk-name }}", version = "{{ pdk-version }}"}
+
+[files]
+layout = [
+    "layout/main.gds"
+]
+schematic = [
+    "schematic/main.sch"
+]
+simulation = [
+    "simulation/fdtd.toml"
+]

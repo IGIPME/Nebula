@@ -1,0 +1,54 @@
+# ── Nebula Docker Compose ────────────────────────────────────────
+#
+# 单机开发部署：nebula-server (Rust Axum) + nebula-frontend (React Nginx)
+#
+# 使用方式：
+#   docker compose build
+#   docker compose up -d
+#   docker compose logs -f
+#   docker compose down
+#
+
+services:
+  # ── Rust 后端 ──────────────────────────────────────────────────
+  nebula-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: nebula-server:latest
+    container_name: nebula-server
+    ports:
+      - "3030:3030"
+    environment:
+      - NEBULA_SERVER_ADDR=0.0.0.0:3030
+      - RUST_LOG=nebula_ffi=info,tower_http=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3030/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - nebula-net
+
+  # ── React 前端 (nginx) ─────────────────────────────────────────
+  nebula-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: nebula-frontend:latest
+    container_name: nebula-frontend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    depends_on:
+      nebula-server:
+        condition: service_healthy
+    networks:
+      - nebula-net
+
+networks:
+  nebula-net:
+    driver: bridge
+    name: nebula-net

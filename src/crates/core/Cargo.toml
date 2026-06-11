@@ -1,0 +1,12 @@
+[package]
+name = "nebula-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+include_dir = "0.7"
+anyhow = "1"
+toml = "1.1.2"
+serde = { version = "1.0.228", features = ["derive"] }
+colored = "3.1.1"
+tera = "1"
