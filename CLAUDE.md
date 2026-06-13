@@ -2,118 +2,143 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project overview
+## Project Overview
 
-Nebula is an EDA platform for micro/nano photonic device and system design. The repository currently combines:
+Nebula is an EDA platform for micro/nano photonic device design, providing a React + Rust project scaffolding system with integrated simulation support (Meep, ANSYS Lumerical).
 
-- A Rust workspace for core template scaffolding logic, a CLI, and an Axum HTTP server.
-- A React + TypeScript + Vite frontend that talks to the local Axum server.
-- A small Python package placeholder under `src/python/lummcp`.
+## Build, Test, and Development Commands
 
-The README states that Simplified Chinese is the primary language for Nebula i18n; existing user-facing strings and many Rust comments/errors are Chinese.
-
-## Common commands
-
-### Rust workspace
-
-Run from the repository root:
+### Rust Backend
 
 ```bash
+# Build entire workspace
 cargo build
+
+# Build specific crate
+cargo build -p nebula-ffi
+
+# Run all tests
 cargo test
+
+# Run tests for a specific crate
 cargo test -p nebula-core
 cargo test -p nebula-cli
 cargo test -p nebula-ffi
-cargo test <test_name>
-cargo fmt --all
-cargo clippy --workspace --all-targets --all-features
+
+# Format check
+cargo fmt --all -- --check
+
+# Lint (clippy)
+cargo clippy --all-targets
+
+# Lint a specific crate with warnings as errors
+cargo clippy -p nebula-core -- -D warnings
+
+# Start the backend server (binds to NEBULA_SERVER_ADDR, default 127.0.0.1:3030)
+cargo run -p nebula-ffi
 ```
 
-Useful binaries:
+### Frontend (src/nebula)
 
 ```bash
-cargo run -p nebula-cli -- template list
-cargo run -p nebula-cli -- template init pic-design --name MyProject --output /tmp --author Alice --dry-run
-cargo run -p nebula-ffi --bin nebula-server
-NEBULA_SERVER_ADDR=127.0.0.1:3030 cargo run -p nebula-ffi --bin nebula-server
+cd src/nebula
+
+pnpm install          # Install dependencies
+pnpm dev              # Start Vite dev server
+pnpm build            # TypeScript check + Vite production build
+pnpm lint             # ESLint
+pnpm exec tsc -b      # TypeScript type check only
 ```
 
-The Rust build uses `.cargo/config.toml`, which sets `clang`/`lld` for `x86_64-unknown-linux-gnu` and exposes `CARGO_WORKSPACE_DIR` for embedding templates.
-
-### Frontend (`src/nebula`)
-
-Run from `src/nebula`:
+### Docker (Development)
 
 ```bash
-pnpm install
-pnpm dev
-pnpm build
-pnpm lint
-pnpm preview
+docker compose build
+docker compose up -d
+docker compose logs -f
+docker compose down
 ```
 
-Frontend development expects the Rust server at `http://127.0.0.1:3030`; `vite.config.ts` proxies `/api` and `/health` to that backend. For a different backend URL in browser code, set `VITE_API_BASE_URL`.
+### Docker (Production)
 
-### Python package (`src/python/lummcp`)
+```bash
+# Pull and deploy
+docker compose -f docker-compose.production.yml --env-file .env pull
+docker compose -f docker-compose.production.yml --env-file .env up -d
 
-The package metadata requires Python `>=3.14` and has no dependencies yet. There are currently no Python test/build scripts declared.
+# Build & push to Tencent Cloud TCR
+./scripts/build.sh              # Push latest + date tag
+TAG=20260613 ./scripts/build.sh # Push specific tag only
+
+# Deploy from CDN
+./scripts/deploy.sh             # Deploy
+./scripts/deploy.sh --update    # Re-download config from CDN then deploy
+./scripts/deploy.sh --down      # Stop and remove containers
+```
 
 ## Architecture
 
-### Rust crates
+### Rust Workspace (3 crates, edition 2024, Rust 1.95+)
 
-The root `Cargo.toml` is a workspace with three members:
+```
+Cargo.toml (workspace)
+├── nebula-core  (src/crates/core)   — Template engine, shared logic
+├── nebula-cli   (src/crates/cli)    — CLI tool (`nebulacli template init/list`)
+└── nebula-ffi   (src/crates/ffi)    — Axum HTTP server + cdylib for FFI
+```
 
-- `src/crates/core` (`nebula-core`): shared template engine. It embeds the repository `templates/` directory at compile time with `include_dir`, reads each template's `template.toml`, builds a Tera context, renders paths and text file contents, validates rendered relative paths, and writes scaffolded projects according to `OverwriteMode` (`Fail`, `Overwrite`, `Skip`) and `dry_run`.
-- `src/crates/cli` (`nebula-cli`): clap-based command-line wrapper around `nebula-core`. Current commands are `template list` and `template init`. CLI variable handling uses `insert_variable` so dashed and underscored aliases such as `project-name`/`project_name` stay consistent.
-- `src/crates/ffi` (`nebula-ffi`): Axum HTTP interface around the same core template functions. Despite the crate name, it currently exposes an HTTP server binary named `nebula-server` plus an `app()` router for tests.
+**`nebula-core`** is the heart of the system. It embeds the `templates/` directory at compile time via `include_dir!`, parses per-template `template.toml` metadata, and renders projects using the Tera template engine. It handles:
+- Template discovery and metadata parsing
+- Variable normalization: kebab-case (`project-name`) and snake_case (`project_name`) are treated as aliases
+- Path traversal protection (rejects `..`, absolute paths in rendered output)
+- Overwrite modes: `Fail`, `Overwrite`, `Skip`
+- Dry-run mode that reports what would be created without writing
 
-Important backend routes in `nebula-ffi`:
+**`nebula-cli`** wraps `nebula-core` behind a Clap CLI. Interactive mode prompts for missing required variables; `--non-interactive` mode errors instead.
 
+**`nebula-ffi`** is an Axum server (`nebula-server` binary) with 3 endpoints:
 - `GET /health`
-- `GET /api/templates`
-- `GET /api/templates/{template_name}`
-- `POST /api/projects`
+- `GET /api/templates` — list available templates
+- `GET /api/templates/{name}` — get template metadata + variable definitions
+- `POST /api/projects` — scaffold a new project (supports dry-run, overwrite modes)
 
-`POST /api/projects` accepts camelCase JSON matching the frontend types: `templateName`, `outputBase`, `variables`, `overwrite` (`fail`/`overwrite`/`skip`), and `dryRun`.
+The `lib.rs` also exports `app()` for FFI use; the crate builds as both `rlib` and `cdylib`. CORS is configured to allow `localhost:5173` (Vite dev server).
 
-### Template system
+### Frontend (src/nebula)
 
-Templates live under `templates/<template-name>/`. Each template has a `template.toml` metadata file and arbitrary files/directories to render. The current template is `pic-design`.
+React 19 + TypeScript 6 + Vite 8 + MUI 9. SPA that talks to the Rust backend. Key structure:
+- `src/api/client.ts` — Axios instance, reads `VITE_API_BASE_URL` env var
+- `src/api/templates.ts` / `projects.ts` — typed API calls
+- `src/api/types.ts` — shared TypeScript interfaces matching backend DTOs
+- `src/components/TemplateSelector.tsx` — template picker
+- `src/components/ProjectCreateForm.tsx` — variable form with dry-run toggle, overwrite mode selector
+- `src/components/ScaffoldResult.tsx` — displays created/skipped files
 
-Template variable names may contain hyphens. The core normalizes aliases so templates and callers can use both hyphenated and underscored forms. For path-like variables (`project-name`, `*_name`, `*-name`), values are rejected if empty, `.`/`..`, or containing path separators. Rendered template paths must remain relative and cannot contain `..`.
+In production, nginx serves the built frontend and reverse-proxies `/api/` and `/health` to the Rust backend.
 
-Because templates are embedded into the Rust binary at compile time, changes under `templates/` require rebuilding/rerunning Rust binaries before the CLI/server sees them.
+### Templates
 
-### Frontend
+Templates live in `templates/<name>/` and are embedded into `nebula-core` at compile time. Each template has:
+- `template.toml` — metadata (name, description, version) + variable definitions (prompt, default)
+- `{{project-name}}/` — the template directory whose name is rendered from variables
+- Files within may use `{{ variable }}` Tera syntax; variable names with hyphens are auto-normalized to underscores for Tera compatibility
 
-The frontend is in `src/nebula` and uses React 19, TypeScript, Vite, MUI, and axios.
+### Python Simulation Environments
 
-- `src/api/*` defines the axios client and TypeScript request/response types for the Rust server.
-- `App.tsx` loads template summaries, fetches selected template metadata, and submits scaffold requests.
-- `components/TemplateSelector.tsx`, `ProjectCreateForm.tsx`, and `ScaffoldResult.tsx` implement the project scaffolding UI.
+- **`src/python/mpmcp/`** — Meep FDTD simulation. Dockerized Ubuntu 22.04 + Miniconda + pymeep. The container runs `sleep infinity` and is used as an execution environment for Meep scripts.
+- **`src/python/lummcp/`** — ANSYS Lumerical integration placeholder (Python 3.14, gRPC-based).
 
-The form defaults to dry-run mode. The default output directory is currently hard-coded in `ProjectCreateForm.tsx`.
+### CI/CD
 
-## Repository notes
+GitHub Actions (`.github/workflows/ci.yml`):
+- Triggers on push/PR to `master`
+- Rust: fmt check (nebula-core only), clippy, and test for all 3 crates (matrix build)
+- Frontend: pnpm install → lint → type check → build
 
-- Generated/build artifacts are ignored by `.gitignore`: Rust `target/`, frontend `node_modules/`, frontend `dist/`, TypeScript build info, Python caches, and env files.
-- No Cursor rules (`.cursor/rules` or `.cursorrules`) or GitHub Copilot instructions were present when this file was created.
-- The nested `src/nebula/README.md` is the default Vite template README; prefer the root `README.md` for project intent.
+### Key Conventions
 
- 常用命令
-
-  # 启动
-  sg docker -c "docker compose up -d"
-
-  # 查看状态
-  sg docker -c "docker compose ps"
-
-  # 查看日志
-  sg docker -c "docker compose logs -f"
-
-  # 重建（源码修改后）
-  sg docker -c "docker compose build --no-cache && docker compose up -d"
-
-  # 停止
-  sg docker -c "docker compose down"
+- Rust edition 2024, max line width 100, use `clang` + `lld` as linker on Linux
+- Cargo workspace resolver v2
+- Template variables use kebab-case (`project-name`); code auto-aliases `_` and `-` forms
+- Error messages and UI are in Simplified Chinese
+- Docker images push to Tencent Cloud TCR (`ccr.ccs.tencentyun.com/igipme.nebula/`)

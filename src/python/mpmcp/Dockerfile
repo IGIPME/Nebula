@@ -38,10 +38,14 @@ RUN conda init bash
 RUN conda clean --all -y
 
 # 9. 复制配置文件
-COPY environment.yml ~/environment.yml
+COPY src/python/mpmcp/environment.yml /home/nebula/environment.yml
 
-# 9. 准备 mpmeep 环境
-RUN conda env create -f ~/environment.yml
+# 10. 接受 conda 默认 channels 的服务条款
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+    && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+# 11. 准备 mpmeep 环境
+RUN conda env create -f /home/nebula/environment.yml
 
 # 默认命令
 CMD ["/bin/bash"]
