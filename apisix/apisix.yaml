@@ -1,0 +1,50 @@
+---
+# ── Nebula APISIX Declarative Routes ─────────────────────────────────
+# Read by APISIX in standalone mode. Hot-reloaded on save.
+#
+# Route priority order (higher = matched first):
+#   1. /api/*     priority 10  → Rust backend
+#   2. /health    priority 10  → Rust backend
+#   3. /*         priority  0  → React SPA (catch-all)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Upstreams — reusable backend pools
+# ═══════════════════════════════════════════════════════════════════════
+upstreams:
+  - id: 1
+    desc: "Nebula Rust backend"
+    type: roundrobin
+    scheme: http
+    nodes:
+      "nebula-server:3030": 1
+
+  - id: 2
+    desc: "Nebula React SPA (nginx static)"
+    type: roundrobin
+    scheme: http
+    nodes:
+      "nebula-frontend:80": 1
+
+# ═══════════════════════════════════════════════════════════════════════
+# Routes — URI → upstream with comment-ready plugin slots
+# ═══════════════════════════════════════════════════════════════════════
+routes:
+  # ── Backend API ─────────────────────────────────────────────────────
+  - uri: /api/*
+    name: "backend-api"
+    upstream_id: 1
+    priority: 10
+
+  # ── Backend Health Check ────────────────────────────────────────────
+  - uri: /health
+    name: "backend-health"
+    upstream_id: 1
+    priority: 10
+
+  # ── Frontend SPA Catch-all ─────────────────────────────────────────
+  - uri: /*
+    name: "frontend-spa"
+    upstream_id: 2
+    priority: 0
+
+#END

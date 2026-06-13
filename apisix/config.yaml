@@ -1,0 +1,23 @@
+# ── Nebula APISIX Gateway Configuration ──────────────────────────────
+# Standalone mode: no etcd required. Routes are defined in apisix.yaml.
+# Docs: https://apisix.apache.org/docs/apisix/standalone/
+
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+apisix:
+  node_listen: 9080
+  enable_admin: false
+  enable_control: false
+  enable_debug: false
+  enable_dev_mode: false
+  enable_reuseport: true
+  config_cache: memory
+
+nginx_config:
+  worker_processes: auto
+  worker_rlimit_nofile: 20480
+  error_log: /dev/stderr
+  error_log_level: warn

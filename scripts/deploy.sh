@@ -17,7 +17,7 @@ set -euo pipefail
 
 # ── 配置 ──────────────────────────────────────────────────────────
 CDN_BASE="${CDN_BASE:-https://cdn.istaroth.xin/nebula}"
-FILES=("docker-compose.production.yml" ".env.example")
+FILES=("docker-compose.production.yml" ".env.example" "apisix/config.yaml" "apisix/apisix.yaml")
 COMPOSE_FILE="docker-compose.production.yml"
 ENV_FILE=".env"
 ENV_EXAMPLE=".env.example"
@@ -50,8 +50,8 @@ if [[ "${ACTION}" == "down" ]]; then
         docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" down --remove-orphans 2>/dev/null || true
     else
         echo "未找到 ${COMPOSE_FILE}，尝试通过容器名停止..."
-        docker stop nebula-frontend nebula-server nebula-mpmcp 2>/dev/null || true
-        docker rm nebula-frontend nebula-server nebula-mpmcp 2>/dev/null || true
+        docker stop nebula-gateway nebula-frontend nebula-server nebula-mpmcp 2>/dev/null || true
+        docker rm nebula-gateway nebula-frontend nebula-server nebula-mpmcp 2>/dev/null || true
     fi
     echo ">>> 已停止"
     exit 0
@@ -63,6 +63,11 @@ if [[ "${ACTION}" == "update" ]] || [[ ! -f "${COMPOSE_FILE}" ]] || [[ ! -f "${E
     for f in "${FILES[@]}"; do
         url="${CDN_BASE}/${f}"
         echo "  下载 ${url} → ${f}"
+        # 确保目标文件的父目录存在（如 apisix/）
+        dir="$(dirname "${f}")"
+        if [[ "${dir}" != "." ]]; then
+            mkdir -p "${dir}"
+        fi
         if ! curl -fSL --connect-timeout 10 --max-time 30 -o "${f}" "${url}"; then
             echo "  ✗ 下载失败: ${url}"
             exit 1
@@ -105,8 +110,8 @@ docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" ps
 echo ""
 echo "========================================"
 echo " 部署完成！"
-echo " 前端: http://localhost (或配置的端口)"
-echo " 后端: http://localhost:3030"
+echo " 前端: http://localhost (通过 APISIX 网关)"
+echo " 后端 (直连): http://localhost:3030"
 echo ""
 echo " 常用命令:"
 echo "   查看日志: docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} logs -f"
