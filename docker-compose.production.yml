@@ -53,6 +53,23 @@ services:
     networks:
       - nebula-net
 
+  # ── pymeep 仿真环境 (Ubuntu 22.04 + Miniconda + pymeep) ──────────
+  nebula-mpmcp:
+    image: ${MPMCP_IMAGE:-ccr.ccs.tencentyun.com/igipme.nebula/nebula.mpmcp}:${MPMCP_IMAGE_TAG:-latest}
+    container_name: nebula-mpmcp
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./data/Workspace:/home/nebula/Workspace
+      - ./data/PDK:/home/nebula/PDK
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - nebula-net
+
 networks:
   nebula-net:
     driver: bridge

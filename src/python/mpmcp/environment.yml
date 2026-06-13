@@ -1,0 +1,11 @@
+name: meepmcp
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pymeep
+  - gsl
+  - h5utils
+  - ffmpeg
+  - autograd
+prefix: /home/nebula/miniconda3/envs/meepmcp

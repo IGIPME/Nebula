@@ -48,6 +48,21 @@ services:
     networks:
       - nebula-net
 
+  # ── pymeep 仿真环境 (Ubuntu 22.04 + Miniconda + pymeep) ──────────
+  nebula-mpmcp:
+    build:
+      context: .
+      dockerfile: src/python/mpmcp/Dockerfile
+    image: nebula-mpmcp:latest
+    container_name: nebula-mpmcp
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./data/Workspace:/home/nebula/Workspace
+      - ./data/PDK:/home/nebula/PDK
+    restart: unless-stopped
+    networks:
+      - nebula-net
+
 networks:
   nebula-net:
     driver: bridge

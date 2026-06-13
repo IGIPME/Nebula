@@ -20,6 +20,7 @@ REGISTRY="${REGISTRY:-ccr.ccs.tencentyun.com}"
 NAMESPACE="${NAMESPACE:-igipme.nebula}"
 BACKEND_REPO="${REGISTRY}/${NAMESPACE}/nebula.backend"
 FRONTEND_REPO="${REGISTRY}/${NAMESPACE}/nebula.frontend"
+MPMCP_REPO="${REGISTRY}/${NAMESPACE}/nebula.mpmcp"
 
 # 切到脚本所在目录的上级（项目根目录）
 cd "$(dirname "$0")/.."
@@ -37,12 +38,13 @@ echo "========================================"
 echo " Nebula Docker 构建与推送"
 echo " 后端: ${BACKEND_REPO}"
 echo " 前端: ${FRONTEND_REPO}"
+echo " mpmcp: ${MPMCP_REPO}"
 echo " 标签: ${TAGS[*]}"
 echo "========================================"
 
 # ── 构建后端 ──────────────────────────────────────────────────────
 echo ""
-echo "[1/4] 构建后端镜像..."
+echo "[1/5] 构建后端镜像..."
 docker build \
     -f "${PROJECT_ROOT}/Dockerfile.backend" \
     -t "${BACKEND_REPO}:${DATE_TAG}" \
@@ -50,32 +52,44 @@ docker build \
 
 # ── 构建前端 ──────────────────────────────────────────────────────
 echo ""
-echo "[2/4] 构建前端镜像..."
+echo "[2/5] 构建前端镜像..."
 docker build \
     -f "${PROJECT_ROOT}/Dockerfile.frontend" \
     -t "${FRONTEND_REPO}:${DATE_TAG}" \
     "${PROJECT_ROOT}"
 
+# ── 构建 mpmcp ─────────────────────────────────────────────────────
+echo ""
+echo "[3/5] 构建 mpmcp 镜像..."
+docker build \
+    -f "${PROJECT_ROOT}/src/python/mpmcp/Dockerfile" \
+    -t "${MPMCP_REPO}:${DATE_TAG}" \
+    "${PROJECT_ROOT}"
+
 # ── 打标签 ────────────────────────────────────────────────────────
 echo ""
-echo "[3/4] 打标签..."
+echo "[4/5] 打标签..."
 for tag in "${TAGS[@]}"; do
     if [[ "${tag}" != "${DATE_TAG}" ]]; then
         echo "  tagging ${BACKEND_REPO}:${tag}"
         docker tag "${BACKEND_REPO}:${DATE_TAG}" "${BACKEND_REPO}:${tag}"
         echo "  tagging ${FRONTEND_REPO}:${tag}"
         docker tag "${FRONTEND_REPO}:${DATE_TAG}" "${FRONTEND_REPO}:${tag}"
+        echo "  tagging ${MPMCP_REPO}:${tag}"
+        docker tag "${MPMCP_REPO}:${DATE_TAG}" "${MPMCP_REPO}:${tag}"
     fi
 done
 
 # ── 推送 ──────────────────────────────────────────────────────────
 echo ""
-echo "[4/4] 推送镜像..."
+echo "[5/5] 推送镜像..."
 for tag in "${TAGS[@]}"; do
     echo "  pushing ${BACKEND_REPO}:${tag}"
     docker push "${BACKEND_REPO}:${tag}"
     echo "  pushing ${FRONTEND_REPO}:${tag}"
     docker push "${FRONTEND_REPO}:${tag}"
+    echo "  pushing ${MPMCP_REPO}:${tag}"
+    docker push "${MPMCP_REPO}:${tag}"
 done
 
 echo ""
@@ -83,4 +97,5 @@ echo "========================================"
 echo " 完成！"
 echo " 后端: ${BACKEND_REPO}:${DATE_TAG}"
 echo " 前端: ${FRONTEND_REPO}:${DATE_TAG}"
+echo " mpmcp: ${MPMCP_REPO}:${DATE_TAG}"
 echo "========================================"

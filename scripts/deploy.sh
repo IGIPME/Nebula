@@ -50,8 +50,8 @@ if [[ "${ACTION}" == "down" ]]; then
         docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" down --remove-orphans 2>/dev/null || true
     else
         echo "未找到 ${COMPOSE_FILE}，尝试通过容器名停止..."
-        docker stop nebula-frontend nebula-server 2>/dev/null || true
-        docker rm nebula-frontend nebula-server 2>/dev/null || true
+        docker stop nebula-frontend nebula-server nebula-mpmcp 2>/dev/null || true
+        docker rm nebula-frontend nebula-server nebula-mpmcp 2>/dev/null || true
     fi
     echo ">>> 已停止"
     exit 0
