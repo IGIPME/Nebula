@@ -91,6 +91,7 @@ services:
     volumes:
       - ./data/Workspace:/home/nebula/Workspace
       - ./data/PDK:/home/nebula/PDK
+      - ./data/Examples:/home/nebula/Examples
     restart: unless-stopped
     logging:
       driver: json-file

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ── Nebula 生产环境部署脚本 ──────────────────────────────────────
 #
-# 从 CDN 拉取配置文件，然后从腾讯云 TCR 拉取镜像并启动服务。
+# 从 OSS 拉取配置文件，然后从腾讯云 TCR 拉取镜像并启动服务。
 #
 # 使用方式：
 #   chmod +x scripts/deploy.sh
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 # ── 配置 ──────────────────────────────────────────────────────────
-CDN_BASE="${CDN_BASE:-https://cdn.istaroth.xin/nebula}"
+CDN_BASE="${CDN_BASE:-https://11477ja4cp718.vicp.fun/nebula}"
 FILES=("docker-compose.production.yml" ".env.example" "apisix/config.yaml" "apisix/apisix.yaml")
 COMPOSE_FILE="docker-compose.production.yml"
 ENV_FILE=".env"

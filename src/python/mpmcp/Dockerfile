@@ -57,14 +57,20 @@ RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkg
 # 11. 准备 mpmeep 环境
 RUN conda env create -f /home/nebula/environment.yml
 
-# 12. 复制 SSH 入口脚本并设置权限
+# 12. 复制示例文件到 Examples 目录
+#     同时保留一份副本到 /opt/nebula-examples，供 entrypoint.sh 在卷挂载为空时初始化使用
 USER root
+COPY src/python/mpmcp/example /home/nebula/Examples
+COPY src/python/mpmcp/example /opt/nebula-examples
+RUN chown -R nebula:nebula /home/nebula/Examples
+
+# 13. 复制 SSH 入口脚本并设置权限
 COPY src/python/mpmcp/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 13. 暴露 SSH 端口
+# 14. 暴露 SSH 端口
 EXPOSE 22
 
-# 14. 设置入口脚本和默认命令
+# 15. 设置入口脚本和默认命令
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
