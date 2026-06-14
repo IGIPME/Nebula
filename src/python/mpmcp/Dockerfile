@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 
 # 2. 安装 Miniconda 所需的依赖
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends wget ca-certificates && \
+    apt-get install -y --no-install-recommends wget ca-certificates openssh-server && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -16,6 +16,16 @@ ARG USER_GID=1000
 
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME
+
+# 3.5 配置 SSH 服务
+RUN mkdir -p /var/run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    echo 'AllowUsers nebula' >> /etc/ssh/sshd_config
+
+# 设置 nebula 用户的 SSH 登录密码（可通过构建参数覆盖）
+ARG NEBULA_PASSWORD=nebula
+RUN echo "nebula:${NEBULA_PASSWORD}" | chpasswd
 
 # 4. 切换到新用户 'nebula' 执行后续命令
 USER $USERNAME
@@ -47,5 +57,14 @@ RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkg
 # 11. 准备 mpmeep 环境
 RUN conda env create -f /home/nebula/environment.yml
 
-# 默认命令
-CMD ["/bin/bash"]
+# 12. 复制 SSH 入口脚本并设置权限
+USER root
+COPY src/python/mpmcp/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# 13. 暴露 SSH 端口
+EXPOSE 22
+
+# 14. 设置入口脚本和默认命令
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]

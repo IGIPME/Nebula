@@ -79,6 +79,8 @@ services:
     image: nebula-mpmcp:latest
     container_name: nebula-mpmcp
     command: ["sleep", "infinity"]
+    ports:
+      - "${MPMCP_SSH_PORT:-2222}:22"
     volumes:
       - ./data/Workspace:/home/nebula/Workspace
       - ./data/PDK:/home/nebula/PDK
