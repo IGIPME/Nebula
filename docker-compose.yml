@@ -20,8 +20,8 @@ services:
       # - "${APISIX_HTTPS_PORT:-9443}:9443"
       # - "${APISIX_PROMETHEUS_PORT:-9180}:9180"
     volumes:
-      - ./apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
-      - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+      - ./docker/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./docker/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
     restart: unless-stopped
     depends_on:
       nebula-server:
@@ -41,7 +41,7 @@ services:
   nebula-server:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: docker/Dockerfile.crates
     image: nebula-server:latest
     container_name: nebula-server
     ports:
@@ -63,7 +63,7 @@ services:
   nebula-frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: docker/Dockerfile.nebula
     image: nebula-frontend:latest
     container_name: nebula-frontend
     # 不对外暴露端口 — APISIX 作为唯一入口代理所有流量
@@ -75,7 +75,7 @@ services:
   nebula-mpmcp:
     build:
       context: .
-      dockerfile: src/python/mpmcp/Dockerfile
+      dockerfile: docker/mpmcp/Dockerfile
     image: nebula-mpmcp:latest
     container_name: nebula-mpmcp
     command: ["sleep", "infinity"]
@@ -85,6 +85,29 @@ services:
       - ./data/Workspace:/home/nebula/Workspace
       - ./data/PDK:/home/nebula/PDK
       - ./data/Examples:/home/nebula/Examples
+      - ./.hermes/ssh/nebula-mpmcp-key.pub:/home/nebula/.ssh/authorized_keys:ro
+    restart: unless-stopped
+    networks:
+      - nebula-net
+
+  # ── Hermes AI Agent (Gateway + Dashboard, s6-overlay) ──────────
+  hermes-agent:
+    image: nousresearch/hermes-agent:latest
+    container_name: hermes-agent
+    # CMD 作为主进程运行 gateway；s6 dashboard 服务由 HERMES_DASHBOARD=1 激活
+    command: gateway run
+    stdin_open: true
+    tty: true
+    environment:
+      - HERMES_DASHBOARD=1
+      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - HERMES_DASHBOARD_PORT=9119
+      - HERMES_DASHBOARD_INSECURE=1
+    ports:
+      - "8642:8642"    # Gateway API
+      - "9119:9119"    # Dashboard Web UI
+    volumes:
+      - ./.hermes:/opt/data
     restart: unless-stopped
     networks:
       - nebula-net

@@ -23,7 +23,10 @@ RUN mkdir -p /var/run/sshd && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     echo 'AllowUsers nebula' >> /etc/ssh/sshd_config
 
-# 设置 nebula 用户的 SSH 登录密码（可通过构建参数覆盖）
+# 创建 .ssh 目录（SSH 密钥认证通过卷挂载注入 authorized_keys）
+RUN mkdir -p /home/$USERNAME/.ssh && chmod 700 /home/$USERNAME/.ssh && chown $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
+# 设置 nebula 用户的 SSH 登录密码（开发环境回退；生产通过 entrypoint.sh 禁用）
 ARG NEBULA_PASSWORD=nebula
 RUN echo "nebula:${NEBULA_PASSWORD}" | chpasswd
 
@@ -65,7 +68,7 @@ COPY src/python/mpmcp/example /opt/nebula-examples
 RUN chown -R nebula:nebula /home/nebula/Examples
 
 # 13. 复制 SSH 入口脚本并设置权限
-COPY src/python/mpmcp/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY docker/mpmcp/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # 14. 暴露 SSH 端口

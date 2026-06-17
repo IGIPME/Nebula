@@ -7,7 +7,12 @@
 .env.*
 !.env.example
 
+# Hermes Agent data (API keys, SSH keys, session data)
+.hermes/
+
 target/
+
+oss/
 
 src/nebula/node_modules/
 src/nebula/dist/

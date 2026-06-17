@@ -1,7 +1,7 @@
 # ── Nebula 后端 Dockerfile ──────────────────────────────────────
 #
 # 上下文：仓库根目录
-# 用法：docker build -f Dockerfile.backend -t nebula-server .
+# 用法：docker build -f docker/Dockerfile.crates -t nebula-server .
 #
 
 # ── Stage 1: 编译 ────────────────────────────────────────────────

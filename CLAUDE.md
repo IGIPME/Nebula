@@ -63,8 +63,8 @@ docker compose down
 
 ```bash
 # Pull and deploy
-docker compose -f docker-compose.production.yml --env-file .env pull
-docker compose -f docker-compose.production.yml --env-file .env up -d
+docker compose -f docker-compose.prod.yml --env-file .env pull
+docker compose -f docker-compose.prod.yml --env-file .env up -d
 
 # Build & push to Tencent Cloud TCR
 ./scripts/build.sh              # Push latest + date tag

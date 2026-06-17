@@ -25,6 +25,13 @@ upstreams:
     nodes:
       "nebula-frontend:80": 1
 
+  - id: 3
+    desc: "Hermes AI Agent Dashboard"
+    type: roundrobin
+    scheme: http
+    nodes:
+      "hermes-agent:9119": 1
+
 # ═══════════════════════════════════════════════════════════════════════
 # Routes — URI → upstream with comment-ready plugin slots
 # ═══════════════════════════════════════════════════════════════════════
@@ -40,6 +47,17 @@ routes:
     name: "backend-health"
     upstream_id: 1
     priority: 10
+
+  # ── Hermes AI Agent Dashboard ───────────────────────────────────────
+  - uri: /hermes*
+    name: "hermes-dashboard"
+    upstream_id: 3
+    priority: 10
+    plugins:
+      proxy-rewrite:
+        regex_uri:
+          - "^/hermes/?(.*)"
+          - "/$1"
 
   # ── Frontend SPA Catch-all ─────────────────────────────────────────
   - uri: /*
